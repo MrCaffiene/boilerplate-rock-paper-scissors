@@ -12,36 +12,37 @@
 
 import random
 
-def player(prev_play, opponent_history=[]):
-    opponent_history.append(prev_play)
+opponent_history = []
 
-    # Only use actual moves
-    moves = [m for m in opponent_history if m]
+def beat(move):
+    return {'R': 'P', 'P': 'S', 'S': 'R'}[move]
 
-    if len(moves) < 5:
-        return "R"  # Start with R a few times
+def player(prev_play):
+    global opponent_history
 
-    # Build a move sequence pattern dictionary
-    pattern_length = 3
-    pattern_dict = {}
+    if prev_play == "":
+        opponent_history = []
 
-    for i in range(len(moves) - pattern_length):
-        pattern = tuple(moves[i:i + pattern_length])
-        next_move = moves[i + pattern_length]
-        if pattern not in pattern_dict:
-            pattern_dict[pattern] = {"R": 0, "P": 0, "S": 0}
-        pattern_dict[pattern][next_move] += 1
+    if prev_play:
+        opponent_history.append(prev_play)
 
-    # Get the most recent pattern
-    last_pattern = tuple(moves[-pattern_length:])
+    if len(opponent_history) < 5:
+        return random.choice(['R', 'P', 'S'])
 
-    # Predict opponent's next move
-    if last_pattern in pattern_dict:
-        predicted_move = max(pattern_dict[last_pattern], key=pattern_dict[last_pattern].get)
+    transitions = {}
+    for i in range(len(opponent_history) - 2):
+        pair = (opponent_history[i], opponent_history[i + 1])
+        next_move = opponent_history[i + 2]
+        transitions.setdefault(pair, {'R': 0, 'P': 0, 'S': 0})
+        transitions[pair][next_move] += 1
+
+    last_pair = (opponent_history[-2], opponent_history[-1])
+    if last_pair in transitions:
+        prediction = max(transitions[last_pair], key=transitions[last_pair].get)
     else:
-        predicted_move = "R"
+        freq = {'R': 0, 'P': 0, 'S': 0}
+        for m in opponent_history:
+            freq[m] += 1
+        prediction = max(freq, key=freq.get)
 
-    # Counter the predicted move
-    counter = {"R": "P", "P": "S", "S": "R"}
-    return counter[predicted_move]
-
+    return beat(prediction)
